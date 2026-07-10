@@ -16,45 +16,13 @@ export default function ChatbotDrawer() {
   const chatRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation[]>([]);
   const [isThinking, setIsThinking] = useState<boolean>(false);
-
-  // const { mutate: handleChatMutation, isPending } = useMutation({
-  //   mutationFn: ({
-  //     isThinking,
-  //   }: {
-  //     isThinking: boolean;
-  //   }) => handleChat(conversation, isThinking),
-  //   onSuccess: (response) => {
-  //     let parts: {
-  //       text: string;
-  //       thought?: boolean;
-  //     }[] = [];
-
-  //     if (response?.thought !== '') {
-  //       parts = [
-  //         ...parts,
-  //         { thought: true, text: response?.thought || 'Terjadi kesalahan' },
-  //       ];
-  //     }
-  //     const botMessage = {
-  //       role: 'model',
-  //       parts: [...parts, { text: response?.answer || 'Terjadi kesalahan' }],
-  //     };
-  //     setConversation((prev) => [...prev, botMessage]);
-  //   },
-  //   onError: (error) => {
-  //     const botMessage = {
-  //       role: 'model',
-  //       parts: [{ text: 'Terjadi kesalahan: ' + error.message }],
-  //     };
-  //     setConversation((prev) => [...prev, botMessage]);
-  //   },
-  // });
+  const [mode, setMode] = useState<"general" | "personal">("general");
 
   const { mutate: handleChatMutation, isPending } = useMutation({
     mutationFn: async ({ isThinking }: { isThinking: boolean }) => {
       if (isThinking) {
         setConversation((prev) => [...prev, { role: "model", parts: [{ thought: true, text: "" }, { text: "" }] }]);
-        const response = await handleChatStreaming(conversation, isThinking);
+        const response = await handleChatStreaming(conversation, isThinking, mode);
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -80,7 +48,7 @@ export default function ChatbotDrawer() {
         return response;
       } else {
         setConversation((prev) => [...prev, { role: "model", parts: [{ text: "" }] }]);
-        const response = await handleChatStreaming(conversation, isThinking);
+        const response = await handleChatStreaming(conversation, isThinking, mode);
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -202,7 +170,7 @@ export default function ChatbotDrawer() {
           )}
         </div>
         <DrawerFooter>
-          <ChatbotTextarea isThinking={isThinking} setIsThinking={setIsThinking} sendMessage={sendMessage} />
+          <ChatbotTextarea isThinking={isThinking} setIsThinking={setIsThinking} sendMessage={sendMessage} mode={mode} setMode={setMode} />
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

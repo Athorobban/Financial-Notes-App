@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +13,19 @@ const formSchema = z.object({
   message: z.string().min(1, "Message is required"),
 });
 
-export default function ChatbotTextarea({ sendMessage, isThinking, setIsThinking }: { sendMessage: (message: string) => void; isThinking: boolean; setIsThinking: Dispatch<SetStateAction<boolean>> }) {
+export default function ChatbotTextarea({
+  sendMessage,
+  isThinking,
+  setIsThinking,
+  mode,
+  setMode,
+}: {
+  sendMessage: (message: string) => void;
+  isThinking: boolean;
+  setIsThinking: Dispatch<SetStateAction<boolean>>;
+  mode: "general" | "personal";
+  setMode: Dispatch<SetStateAction<"general" | "personal">>;
+}) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,7 +56,7 @@ export default function ChatbotTextarea({ sendMessage, isThinking, setIsThinking
         )}
       />
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <Toggle
             size="sm"
             variant="outline"
@@ -55,6 +68,15 @@ export default function ChatbotTextarea({ sendMessage, isThinking, setIsThinking
           >
             <BrainIcon className="size-4" />
           </Toggle>
+          <Select value={mode} onValueChange={(value: "general" | "personal") => setMode(value)}>
+            <SelectTrigger size="sm" className="capitalize!">
+              <SelectValue>{mode}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="personal">Personal</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Button type="submit" size="icon" variant="ghost" className="cursor-pointer text-primary hover:bg-primary/10 hover:text-primary disabled:bg-transparent">
