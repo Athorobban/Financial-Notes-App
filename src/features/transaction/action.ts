@@ -38,7 +38,10 @@ export async function getTransactions(params?: { limit?: number; page?: number; 
     .select("id, amount, type, description, date, category", {
       count: "exact",
     })
-    .order("date");
+    .order("date")
+    .order("created_at", {
+      ascending: true,
+    });
 
   if (search) {
     query = query.ilike("description", `%${search}%`);

@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
-import { handleWizardInput } from "@/features/ai/chat";
-import { createTransaction } from "@/features/transaction/action";
+import { handleWizardInput, handleWizardTools } from "@/features/ai/wizard";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2Icon, SendIcon, SparklesIcon } from "lucide-react";
 import { KeyboardEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
+import Markdown from "react-markdown";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -26,22 +26,18 @@ export default function WizardInput({ refetch }: { refetch: () => void }) {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (message: string) => {
-      const aiResponse = await handleWizardInput(message);
-
-      if (!aiResponse) {
-        throw new Error("Failed to process AI input");
-      }
-
-      return createTransaction(aiResponse);
-    },
+    mutationFn: handleWizardTools,
     onSuccess: (response) => {
-      toast.success("Transaction created successfully!");
+      toast.success(
+        <div className="response-ai w-full!">
+          <Markdown>{response}</Markdown>
+        </div>,
+      );
       refetch();
       form.reset();
     },
     onError: (error) => {
-      toast.error(error instanceof Error) ? error.message : "Failed to process your request";
+      toast.error(error instanceof Error ? error.message : "Failed to process your request");
     },
   });
 

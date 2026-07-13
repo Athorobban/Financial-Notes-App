@@ -30,7 +30,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild>
               <Link href="/dashboard">
                 <CoinsIcon className="text-primary size-5!" />
-                <h1 className="text-2xl font-bold text-primary">Financial Notes App</h1>
+                <h1 className="text-2xl font-bold text-primary">Finnotes App</h1>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

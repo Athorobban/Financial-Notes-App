@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import DashboardContent from "./_components/dashboard-content";
 
 export const metadata: Metadata = {
-  title: "Financial-Notes-App - Dashboard",
+  title: "Finnotes-App - Dashboard",
   description: "Your personal financial dashboard",
 };
 

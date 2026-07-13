@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Transaction from "./_components/transaction";
 
 export const metadata: Metadata = {
-  title: "Financial-Notes-App - Transaction",
+  title: "Finnotes-App - Transaction",
   description: "View and manage your financial transactions.",
 };
 
