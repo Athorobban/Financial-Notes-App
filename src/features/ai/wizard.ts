@@ -2,10 +2,10 @@
 
 import z from "zod";
 import { createAI } from "./instance";
-import { Content, FunctionDeclaration, Type } from "@google/genai";
+import { Content } from "@google/genai";
 import { createTransaction, deleteTransaction, updateTransaction } from "../transaction/action";
 import { findEmbedding } from "./embedding";
-import { createTransactionDeclaration, deleteTransactionDeclaration, getTransactionDeclaration, updateTransactionDeclaration } from "./functionTransaction";
+import { createTransactionDeclaration, deleteTransactionDeclaration, getTransactionDeclaration, updateTransactionDeclaration } from "./function-transaction";
 
 const transactionSchema = z.object({
   amount: z.number().default(0).describe("Transaction nominal"),
