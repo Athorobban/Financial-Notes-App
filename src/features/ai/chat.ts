@@ -3,7 +3,7 @@
 import { Conversation } from "@/app/types/ai";
 import { createAI } from "./instance";
 import { findEmbedding, generateEmbedding } from "./embedding";
-import { Content, FunctionCall, Part } from "@google/genai";
+import { Content, FunctionCall, HarmBlockThreshold, HarmCategory, Part } from "@google/genai";
 import { getTransactionDeclaration } from "./function-transaction";
 
 export async function handleChat(conversation: Conversation[], isThinking: boolean) {
@@ -59,6 +59,12 @@ async function generalChat(conversation: Content[], isThinking?: boolean) {
         {
           googleSearch: {},
           urlContext: {},
+        },
+      ],
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
         },
       ],
       systemInstruction: `
@@ -201,10 +207,25 @@ export async function* handleChatStreaming(conversation: Content[], isThinking: 
         model: "gemini-3.5-flash",
         contents,
         config: {
-          tools: [{ functionDeclarations: [getTransactionDeclaration] }],
+          tools: [
+            {
+              // googleSearch: {},
+              // urlContext: {},
+              functionDeclarations: [getTransactionDeclaration],
+            },
+          ],
+          // toolConfig: {
+          //   includeServerSideToolInvocations: true,
+          // },
           thinkingConfig: {
             includeThoughts: isThinking,
           },
+          safetySettings: [
+            {
+              category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+              threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            },
+          ],
         },
       });
 
