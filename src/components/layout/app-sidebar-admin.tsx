@@ -3,23 +3,18 @@
 import { usePathname } from "next/navigation";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
 import Link from "next/link";
-import { BanknoteIcon, CoinsIcon, LayoutDashboardIcon } from "lucide-react";
+import { BanknoteIcon, CoinsIcon, LayoutDashboardIcon, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
   {
-    label: "Dashboard",
-    icon: <LayoutDashboardIcon />,
-    href: "/dashboard",
-  },
-  {
-    label: "Transaction",
-    icon: <BanknoteIcon />,
-    href: "/dashboard/transaction",
+    label: "User Management",
+    icon: <UserCog />,
+    href: "/admin/user",
   },
 ];
 
-export function AppSidebar() {
+export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
@@ -30,9 +25,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild>
               <Link href="/dashboard">
                 <CoinsIcon className="text-primary size-5!" />
-                <span className="font-extrabold text-2xl text-slate-800 tracking-tight">
-                  Finnotes<span className="text-primary">App</span>
-                </span>
+                <h1 className="text-2xl font-bold text-primary">Admin Finnotes</h1>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
