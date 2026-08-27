@@ -20,6 +20,7 @@ import DialogDeleteUser from "./dialog-delete-user";
 export default function UserManagement() {
   const supabase = createClient();
   const { currentPage, currentLimit, currentSearch, handleChangePage, handleChangeLimit, handleChangeSearch } = useDataTable();
+
   const {
     data: users,
     isLoading,
@@ -30,6 +31,7 @@ export default function UserManagement() {
       const result = await supabase
         .from("profiles")
         .select("*", { count: "exact" })
+        .eq("role", "User") // <-- TAMBAHKAN FILTER INI
         .range((currentPage - 1) * currentLimit, currentPage * currentLimit - 1)
         .order("created_at")
         .ilike("name", `%${currentSearch}%`);
@@ -116,7 +118,6 @@ export default function UserManagement() {
       </div>
       <DataTable header={HEADER_TABLE_USER} data={filteredData} isLoading={isLoading} totalPages={totalPages} currentPage={currentPage} currentLimit={currentLimit} onChangePage={handleChangePage} onChangeLimit={handleChangeLimit} />
 
-      {/* PERBAIKAN: Menambahkan fallback object kosong ({} as Profile) pada currentData */}
       <DialogUpdateUser open={selectedAction?.type === "update"} refetch={refetch} currentData={selectedAction?.data || ({} as Profile)} handleChangeAction={handleChangeAction} />
       <DialogDeleteUser open={selectedAction?.type === "delete"} refetch={refetch} currentData={selectedAction?.data || ({} as Profile)} handleChangeAction={handleChangeAction} />
     </div>

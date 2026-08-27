@@ -11,7 +11,8 @@ export default function DialogDeleteUser({ open, refetch, currentData, handleCha
   const onSubmit = () => {
     const formData = new FormData();
     formData.append("id", currentData!.id as string);
-    formData.append("avatar_url", currentData!.avatar_url as string);
+    // Baris formData.append("avatar_url", ...) telah dihapus karena sudah tidak relevan
+
     startTransition(() => {
       deleteUserAction(formData);
     });
