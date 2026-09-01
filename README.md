@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Finnotes App | Smart Personal Finance with AI
 
-## Getting Started
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Gemini_AI-8E75B2?style=for-the-badge&logo=googlebard&logoColor=white)
 
-First, run the development server:
+Finnotes is a modern, intelligent personal finance management platform designed to help users track, analyze, and optimize their financial habits. By integrating Google's Gemini AI, Finnotes provides personalized, generative insights to elevate financial awareness and literacy.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Intelligent AI Insights:** Seamlessly integrated with Gemini AI to generate personalized financial advice and saving strategies based on user transaction history.
+- **Role-Based Access Control (RBAC):** Secure and isolated routing distinguishing between standard `User` dashboards and `Admin` management portals.
+- **Absolute Data Privacy:** Engineered with strict Supabase Row Level Security (RLS) policies, ensuring 100% data isolation where users can only access and modify their own financial records.
+- **Modern UI/UX:** A clean, responsive, and intuitive interface built with Tailwind CSS and carefully crafted components.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework:** [Next.js](https://nextjs.org) (App Router)
+- **Database & Authentication:** Supabase (PostgreSQL, Auth, RLS)
+- **Styling:** Tailwind CSS & Shadcn UI
+- **AI Integration:** Google Gemini AI API
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Getting Started
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This is a Next.js project bootstrapped with `create-next-app`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Prerequisites
 
-## Deploy on Vercel
+Ensure you have the following installed on your local machine:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Node.js (v18 or higher)
+- A Supabase project setup
+- A Gemini AI API Key
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Installation
