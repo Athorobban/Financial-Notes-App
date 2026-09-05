@@ -1,10 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
 import Link from "next/link";
-import { BanknoteIcon, CoinsIcon, LayoutDashboardIcon, UserCog } from "lucide-react";
+import { BanknoteIcon, CoinsIcon, EllipsisVertical, LayoutDashboardIcon, LogOut, UserCircle, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { signOut } from "@/actions/auth-action";
 
 const sidebarItems = [
   {
@@ -47,6 +49,13 @@ export function AdminSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu onClick={() => signOut()} className="text-red-500 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+          <LogOut className="mr-2 size-4" />
+          Logout
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
