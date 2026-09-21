@@ -3,18 +3,12 @@
 import { usePathname } from "next/navigation";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "../ui/sidebar";
 import Link from "next/link";
-import {
-  BanknoteIcon,
-  CoinsIcon,
-  EllipsisVertical,
-  LayoutDashboardIcon,
-  LogOut,
-  UserCircle, // Ikon tambahan untuk representasi user tanpa avatar
-} from "lucide-react";
+import { BanknoteIcon, CoinsIcon, EllipsisVertical, LayoutDashboardIcon, LogOut, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { signOut } from "@/actions/auth-action";
+import { getProfileFromCookie, signOut } from "@/actions/auth-action";
 import { useAuthStore } from "@/stores/auth-store";
+import { useEffect, useState } from "react";
 
 const sidebarItems = [
   {
@@ -32,13 +26,35 @@ const sidebarItems = [
 export function AppSidebar() {
   const { isMobile } = useSidebar();
   const pathname = usePathname();
-
-  // Mengambil profile dari global store
   const profile = useAuthStore((state) => state.profile);
 
+  const setProfile = useAuthStore((state) => (state as any).setProfile);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  // HYDRATION: Menarik data dari server cookie ke client store saat pertama kali dimuat
+  useEffect(() => {
+    const hydrateProfile = async () => {
+      // Jika di store belum ada role, minta dari server
+      if (!profile?.role) {
+        try {
+          const serverProfile = await getProfileFromCookie();
+          if (serverProfile && setProfile) {
+            setProfile(serverProfile);
+          }
+        } catch (error) {
+          console.error("Gagal memuat profil:", error);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    hydrateProfile();
+  }, [profile?.role, setProfile]);
+
   // Fallback state jika profile sedang dimuat
-  const userName = profile?.name || "Memuat...";
-  const userRole = profile?.role || "Memuat...";
+  const userName = profile?.name;
+  const userRole = profile?.role;
 
   return (
     <Sidebar collapsible="icon" variant="floating">

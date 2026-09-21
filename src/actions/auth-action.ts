@@ -45,3 +45,13 @@ export async function signOut() {
     redirect("/login");
   }
 }
+
+export async function getProfileFromCookie() {
+  const cookieStore = await cookies();
+  const profileString = cookieStore.get("user_profile")?.value;
+
+  if (profileString) {
+    return JSON.parse(profileString);
+  }
+  return null;
+}

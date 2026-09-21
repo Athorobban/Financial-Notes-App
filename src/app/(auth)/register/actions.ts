@@ -15,7 +15,6 @@ export async function register(prevState: AuthFormState, formData: FormData | nu
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role") || "User",
-    avatar_url: "",
   });
 
   if (!validatedFields.success) {
