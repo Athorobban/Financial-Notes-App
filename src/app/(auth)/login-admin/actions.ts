@@ -56,7 +56,7 @@ export async function login(prevState: AuthFormState, formData: FormData | null)
       httpOnly: true,
       path: "/",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: 60 * 60 * 24,
     });
   }
 
@@ -131,7 +131,7 @@ export async function loginAdmin(prevState: AuthFormState, formData: FormData | 
       httpOnly: true,
       path: "/",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: 60 * 60 * 24,
     });
   }
 
