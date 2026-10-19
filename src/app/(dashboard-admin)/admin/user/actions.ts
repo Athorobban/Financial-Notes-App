@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createUserSchema, updateUserSchema } from "@/validations/auth-validation"; // Sesuaikan lokasi schema Anda
 
 const getAdminSupabase = () => {
-  return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
+  return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 };
 
 export async function createUser(prevState: any, formData: FormData) {

@@ -3,15 +3,29 @@
 import { usePathname } from "next/navigation";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "../ui/sidebar";
 import Link from "next/link";
-import { BanknoteIcon, CoinsIcon, EllipsisVertical, LayoutDashboardIcon, LogOut, UserCircle, Sparkles, PieChart, Settings, Loader2 } from "lucide-react";
+import {
+  BanknoteIcon,
+  CoinsIcon,
+  EllipsisVertical,
+  LayoutDashboardIcon,
+  LogOut,
+  UserCircle,
+  Sparkles,
+  PieChart,
+  Settings,
+  Loader2,
+  LifeBuoy, // Icon baru untuk Bantuan
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { getProfileFromCookie, signOut } from "@/actions/auth-action";
 import { useAuthStore } from "@/stores/auth-store";
 import { useEffect, useState } from "react";
 
-// 1. Configuration-Driven Navigation: Memisahkan data dari UI
-const NAVIGATION_CONFIG = [
+// =========================================================================
+// 1. MAIN NAVIGATION (Menu Utama Aplikasi)
+// =========================================================================
+const MAIN_NAVIGATION = [
   {
     group: "Overview",
     items: [
@@ -26,9 +40,22 @@ const NAVIGATION_CONFIG = [
       { label: "Reports", icon: PieChart, href: "/dashboard/reports" },
     ],
   },
+];
+
+// =========================================================================
+// 2. SECONDARY NAVIGATION (Menu Bawah Kaku)
+// =========================================================================
+const SECONDARY_NAVIGATION = [
   {
-    group: "Preferences",
-    items: [{ label: "Account Settings", icon: Settings, href: "/dashboard/account-settings" }],
+    label: "Bantuan",
+    icon: LifeBuoy,
+    href: "/dashboard/help",
+    badge: "Beta", // Penanda fitur baru
+  },
+  {
+    label: "Pengaturan Akun",
+    icon: Settings,
+    href: "/dashboard/account-settings",
   },
 ];
 
@@ -63,6 +90,11 @@ export function AppSidebar() {
   const userName = profile?.name;
   const userRole = profile?.role;
 
+  // Fungsi helper untuk mengecek status URL yang aktif
+  const checkIsActive = (href: string) => {
+    return href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(`${href}/`);
+  };
+
   return (
     <Sidebar collapsible="icon" variant="floating" className="border-r border-slate-200 bg-slate-50/50">
       {/* HEADER */}
@@ -85,43 +117,73 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* CONTENT: Dinamis berdasarkan konfigurasi */}
-      <SidebarContent className="px-2 gap-4 mt-4">
-        {NAVIGATION_CONFIG.map((navGroup) => (
-          <SidebarGroup key={navGroup.group} className="p-0">
-            <SidebarGroupLabel className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">{navGroup.group}</SidebarGroupLabel>
-            <SidebarMenu>
-              {navGroup.items.map((item) => {
-                // PERBAIKAN LOGIKA ACTIVE STATE
-                // Jika href adalah "/dashboard", wajib exact match.
-                // Jika bukan, gunakan exact match ATAU startsWith untuk menangani sub-halaman (misal: /dashboard/transaction/detail)
-                const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      {/* CONTENT: Fleksibel dengan Navigation Terbagi Dua */}
+      <SidebarContent className="px-2 gap-4 mt-4 flex flex-col">
+        {/* Render Main Navigation */}
+        <div className="flex-1 space-y-4">
+          {MAIN_NAVIGATION.map((navGroup) => (
+            <SidebarGroup key={navGroup.group} className="p-0">
+              <SidebarGroupLabel className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">{navGroup.group}</SidebarGroupLabel>
+              <SidebarMenu>
+                {navGroup.items.map((item) => {
+                  const isActive = checkIsActive(item.href);
+                  return (
+                    <SidebarMenuItem key={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.label}
+                        className={cn(
+                          "py-5 px-4 text-sm rounded-xl transition-all duration-200",
+                          isActive ? "bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/20 hover:bg-primary hover:text-primary-foreground" : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900",
+                        )}
+                      >
+                        <Link href={item.href}>
+                          <item.icon className={cn("size-5", isActive ? "text-primary-foreground" : "text-slate-500")} />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          ))}
+        </div>
 
-                return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.label}
-                      className={cn(
-                        "py-5 px-4 text-sm rounded-xl transition-all duration-200",
-                        isActive ? "bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/20 hover:bg-primary hover:text-primary-foreground" : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900",
+        {/* Render Secondary Navigation (Selalu menempel di bawah berkat mt-auto) */}
+        <SidebarGroup className="mt-auto p-0 pb-2">
+          <SidebarGroupLabel className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">Lainnya</SidebarGroupLabel>
+          <SidebarMenu>
+            {SECONDARY_NAVIGATION.map((item) => {
+              const isActive = checkIsActive(item.href);
+              return (
+                <SidebarMenuItem key={item.label}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.label}
+                    className={cn("py-5 px-4 text-sm rounded-xl transition-all duration-200 group", isActive ? "bg-slate-200/80 text-slate-900 font-semibold" : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900")}
+                  >
+                    <Link href={item.href} className="flex items-center w-full">
+                      <item.icon className={cn("size-5 mr-3", isActive ? "text-slate-900" : "text-slate-500")} />
+                      <span className="flex-1 text-left">{item.label}</span>
+
+                      {/* Desain Modern untuk Badge Beta */}
+                      {item.badge && (
+                        <span className="ml-auto flex items-center justify-center rounded-full bg-indigo-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-700 ring-1 ring-inset ring-indigo-700/10 group-hover:bg-indigo-200 transition-colors">
+                          {item.badge}
+                        </span>
                       )}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className={cn("size-5", isActive ? "text-primary-foreground" : "text-slate-500")} />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-        ))}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
 
-      {/* FOOTER */}
-      <SidebarFooter className="p-4">
+      {/* FOOTER: Identitas Profil Pengguna (Tidak berubah) */}
+      <SidebarFooter className="p-4 border-t border-slate-200/50">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
