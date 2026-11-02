@@ -1,4 +1,4 @@
-import { Transaction } from "@/app/types/transaction";
+import { Transaction } from "@/types/transaction";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

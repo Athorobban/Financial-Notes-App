@@ -2,27 +2,40 @@
 
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { handleChat, handleChatStreaming } from "@/features/ai/chat";
+import { createChatSession, deleteChatSession, getChatSession, handleChatStreaming, updateChatSession } from "@/features/ai/chat";
 import { cn } from "@/lib/utils";
-import { BotIcon, ChevronDownIcon, EllipsisIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, BotIcon, ChevronDownIcon, EllipsisIcon, Loader2Icon, MessageSquareIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ChatbotTextarea from "./chatbot-textarea";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Markdown from "react-markdown";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Conversation } from "@/app/types/ai";
+import { ChatSession, Conversation } from "@/types/ai";
+import { toast } from "sonner";
 
 export default function ChatbotDrawer() {
   const chatRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation[]>([]);
   const [isThinking, setIsThinking] = useState<boolean>(false);
-  const [mode, setMode] = useState<"general" | "personal">("general");
+  const [mode, setMode] = useState<"general" | "personal">("personal");
+
+  const [showHistory, setShowHistory] = useState<boolean>(false);
+  const [activeChatSession, setActiveChatSession] = useState<string | null>(null);
+
+  const { data: chatSessions = [], refetch: refetchSessions } = useQuery<ChatSession[]>({
+    queryKey: ["chatSessions"],
+    queryFn: getChatSession,
+  });
 
   const { mutate: handleChatMutation, isPending } = useMutation({
-    mutationFn: async ({ isThinking }: { isThinking: boolean }) => {
+    mutationFn: async ({ isThinking, sessionId, history }: { isThinking: boolean; sessionId: string; history: Conversation[] }) => {
+      let finalThought = "";
+      let finalAnswer = "";
+      let historyFromAI: Conversation[] = [];
+
       if (isThinking) {
         setConversation((prev) => [...prev, { role: "model", parts: [{ thought: true, text: "" }, { text: "" }] }]);
-        const response = await handleChatStreaming(conversation, isThinking, mode);
+        const response = await handleChatStreaming(history, isThinking, mode);
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -42,13 +55,32 @@ export default function ChatbotDrawer() {
                 },
               ],
             };
+            historyFromAI = newConversation;
             return newConversation;
           });
+
+          if (chunk.startsWith("[thought]")) {
+            finalThought += chunk.replace("[thought]", "");
+          } else {
+            finalAnswer += chunk;
+          }
         }
+
+        if (historyFromAI.length === 0) {
+          historyFromAI = [
+            ...history,
+            {
+              role: "model",
+              parts: [{ thought: true, text: finalThought }, { text: finalAnswer }],
+            },
+          ];
+        }
+        await updateChatSession(sessionId, historyFromAI);
+        refetchSessions();
         return response;
       } else {
         setConversation((prev) => [...prev, { role: "model", parts: [{ text: "" }] }]);
-        const response = await handleChatStreaming(conversation, isThinking, mode);
+        const response = await handleChatStreaming(history, isThinking, mode);
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -58,9 +90,24 @@ export default function ChatbotDrawer() {
               ...newConversation[lastIndex],
               parts: [{ text: newConversation[lastIndex].parts[0].text + chunk }],
             };
+            historyFromAI = newConversation;
             return newConversation;
           });
+          finalAnswer += chunk;
         }
+
+        if (historyFromAI.length === 0) {
+          historyFromAI = [
+            ...history,
+            {
+              role: "model",
+              parts: [{ text: finalAnswer }],
+            },
+          ];
+        }
+
+        await updateChatSession(sessionId, historyFromAI);
+        refetchSessions();
         return response;
       }
     },
@@ -73,13 +120,30 @@ export default function ChatbotDrawer() {
     },
   });
 
-  function sendMessage(message: string) {
+  async function sendMessage(message: string) {
     const newMessage = {
       role: "user",
       parts: [{ text: message }],
     };
-    setConversation((prev) => [...prev, newMessage]);
-    handleChatMutation({ isThinking });
+
+    const history = [...conversation, newMessage];
+    setConversation(history);
+    let sessionId = activeChatSession;
+
+    try {
+      if (!sessionId) {
+        const title = message.substring(0, 30) + (message.length > 30 ? "..." : "");
+        const newSession: ChatSession = await createChatSession(title);
+        sessionId = newSession.id;
+        setActiveChatSession(sessionId);
+      } else {
+        await updateChatSession(sessionId, history);
+      }
+      handleChatMutation({ isThinking, sessionId, history });
+      refetchSessions();
+    } catch (error) {
+      toast.error("Failed to save message: " + (error instanceof Error ? error.message : String(error)));
+    }
   }
 
   useEffect(() => {
@@ -91,27 +155,127 @@ export default function ChatbotDrawer() {
     }
   }, [conversation]);
 
+  function selectSession(sessionId: string) {
+    const session = chatSessions.find((s) => s.id === sessionId);
+    if (session) {
+      setConversation(session.messages);
+      setActiveChatSession(sessionId);
+      setShowHistory(false);
+    } else {
+      toast.error("Chat session not found");
+    }
+  }
+
+  function startNewChat() {
+    setActiveChatSession(null);
+    setConversation([]);
+    setShowHistory(false);
+  }
+
+  const { mutate: mutateDeleteChatSession, isPending: isLoadingDeleteChatSession } = useMutation({
+    mutationKey: ["deleteChatSession"],
+    mutationFn: async (payload: { sessionId: string }) => {
+      await deleteChatSession(payload.sessionId);
+    },
+    onSuccess() {
+      refetchSessions();
+      toast.success("Chat session deleted successfully");
+      setActiveChatSession(null);
+      setConversation([]);
+    },
+    onError(error) {
+      toast.error("Failed to delete chat session: " + (error instanceof Error ? error.message : String(error)));
+    },
+  });
+
   return (
     <Drawer direction="right" modal={false}>
       <DrawerTrigger className="fixed bottom-4 right-4" asChild>
-        <Button className="rounded-full size-14" size="icon-lg" variant="outline">
+        <Button className="rounded-full size-14" size="icon-lg">
           <BotIcon className="size-6" />
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="w-screen! md:w-110!">
-        <DrawerHeader className="flex flex-row justify-between">
-          <div>
-            <DrawerTitle className="font-bold text-primary">AI Financial Advisor</DrawerTitle>
-            <DrawerDescription>Get personalized financial advice.</DrawerDescription>
+      <DrawerContent className="w-screen! md:w-110! flex flex-col h-full">
+        <DrawerHeader className="flex flex-row items-center justify-between pb-4 border-b">
+          {showHistory ? (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="cursor-pointer" onClick={() => setShowHistory(false)}>
+                <ArrowLeftIcon />
+              </Button>
+              <DrawerTitle className="text-base font-bold text-primary">Chat History</DrawerTitle>
+            </div>
+          ) : (
+            <div>
+              <DrawerTitle className="font-bold text-primary">AI Financial Advisor</DrawerTitle>
+              <DrawerDescription className="text-xs">Get personalized financial advice</DrawerDescription>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5 ml-auto">
+            {showHistory ? (
+              <Button onClick={startNewChat}>
+                <PlusIcon className="size-4" />
+                New Chat
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" size="icon" onClick={() => setShowHistory(true)} className="cursor-pointer">
+                  <MessageSquareIcon className="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="cursor-pointer" onClick={startNewChat}>
+                  <PlusIcon className="size-4" />
+                </Button>
+              </>
+            )}
           </div>
+
           <DrawerClose asChild>
             <Button variant="outline" size="icon">
               <XIcon />
             </Button>
           </DrawerClose>
         </DrawerHeader>
-        <div className="h-full px-4 overflow-y-auto no-scrollbar">
-          {conversation.length > 0 ? (
+        <div className="flex flex-col flex-1 min-h-0 px-4 py-2 overflow-y-auto no-scrollbar">
+          {showHistory ? (
+            <div>
+              {chatSessions.length > 0 ? (
+                <div className="flex flex-col gap-2 overflow-y-auto">
+                  {chatSessions.map((chatSession) => (
+                    <div
+                      key={chatSession.id}
+                      onClick={() => selectSession(chatSession.id)}
+                      className={cn(
+                        "flex items-center justify-between p-3 text-left transition-all border cursor-pointer rounded-xl border-border hover:bg-muted/70 group",
+                        activeChatSession === chatSession.id && "border-primary bg-primary-5 hover:bg-primary/5",
+                      )}
+                    >
+                      <span className="font-medium truncate">{chatSession.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="cursor-pointer hover:text-destructive text-muted-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          mutateDeleteChatSession({
+                            sessionId: chatSession.id,
+                          });
+                        }}
+                        disabled={isLoadingDeleteChatSession}
+                      >
+                        {isLoadingDeleteChatSession ? <Loader2Icon className="animate-spin" /> : <Trash2Icon />}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                  <MessageSquareIcon className="size-10 text-muted-foreground/40" />
+                  <h4 className="text-sm font-medium text-muted-foreground">No chat history yet</h4>
+                  <p className="text-xs text-muted-foreground/70">Start a new conversation to get financial advice</p>
+                </div>
+              )}
+            </div>
+          ) : conversation.length > 0 ? (
             <div ref={chatRef} className="flex flex-col h-full gap-8 overflow-x-hidden overflow-y-auto no-scrollbar">
               {conversation.map((message, index) => (
                 <div key={`conversation-${index}`} className={cn("flex flex-col gap-2", message.role === "model" ? "items-start" : "items-end")}>
@@ -133,13 +297,13 @@ export default function ChatbotDrawer() {
                             {part.thought ? (
                               <Collapsible>
                                 <CollapsibleTrigger asChild>
-                                  <Button variant="ghost">
-                                    Tampilkan alur berpikir
+                                  <Button variant="secondary" className="mt-1 text-xs font-medium cursor-pointer" size="sm">
+                                    Thought
                                     <ChevronDownIcon />
                                   </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                  <div className="pl-2 ml-4 border-l">
+                                  <div className="pl-2 ml-4 text-xs italic border-l border-muted text-muted-foreground">
                                     <Markdown>{part.text}</Markdown>
                                   </div>
                                 </CollapsibleContent>
@@ -157,7 +321,7 @@ export default function ChatbotDrawer() {
                 </div>
               ))}
               {isPending && (
-                <div className="flex items-center animate-pulse -mt-8">
+                <div className="flex items-center -mt-8 animate-pulse">
                   <EllipsisIcon className="size-8 text-primary/50" />
                 </div>
               )}
@@ -169,9 +333,11 @@ export default function ChatbotDrawer() {
             </div>
           )}
         </div>
-        <DrawerFooter>
-          <ChatbotTextarea isThinking={isThinking} setIsThinking={setIsThinking} sendMessage={sendMessage} mode={mode} setMode={setMode} />
-        </DrawerFooter>
+        {!showHistory && (
+          <DrawerFooter>
+            <ChatbotTextarea isThinking={isThinking} setIsThinking={setIsThinking} sendMessage={sendMessage} mode={mode} setMode={setMode} />
+          </DrawerFooter>
+        )}
       </DrawerContent>
     </Drawer>
   );

@@ -1,10 +1,11 @@
 "use server";
 
-import { Conversation } from "@/app/types/ai";
+import { Conversation } from "@/types/ai";
 import { createAI } from "./instance";
 import { findEmbedding, generateEmbedding } from "./embedding";
 import { Content, FunctionCall, HarmBlockThreshold, HarmCategory, Part } from "@google/genai";
 import { getTransactionDeclaration } from "./function-transaction";
+import { createClient } from "@/lib/supabase/server";
 
 export async function handleChat(conversation: Conversation[], isThinking: boolean) {
   const ai = createAI();
@@ -204,7 +205,7 @@ export async function* handleChatStreaming(conversation: Content[], isThinking: 
     while (running) {
       iterate++;
       const response = await ai.models.generateContentStream({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents,
         config: {
           tools: [
@@ -288,4 +289,71 @@ export async function* handleChatStreaming(conversation: Content[], isThinking: 
       }
     }
   }
+}
+
+export async function createChatSession(title: string = "New Conversation") {
+  const supabase = await createClient();
+  const user = await supabase.auth.getUser().then((res) => res.data.user);
+
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .insert({
+      title,
+      user_id: user.id,
+      messages: [],
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+export async function updateChatSession(id: string, messages: Conversation[]) {
+  const supabase = await createClient();
+  const user = await supabase.auth.getUser().then((res) => res.data.user);
+
+  if (!user) throw new Error("Unauthorized");
+
+  const { error, success } = await supabase
+    .from("chat_sessions")
+    .update({
+      messages,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
+
+  return { success };
+}
+
+export async function getChatSession() {
+  const supabase = await createClient();
+  const user = await supabase.auth.getUser().then((res) => res.data.user);
+
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase.from("chat_sessions").select("*").eq("user_id", user.id).order("updated_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return data || [];
+}
+
+export async function deleteChatSession(id: string) {
+  const supabase = await createClient();
+  const user = await supabase.auth.getUser().then((res) => res.data.user);
+
+  if (!user) throw new Error("Unauthorized");
+
+  const { error, success } = await supabase.from("chat_sessions").delete().eq("id", id).eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
+
+  return { success };
 }

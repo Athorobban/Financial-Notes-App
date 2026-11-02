@@ -1,4 +1,4 @@
-import { Transaction } from "@/app/types/transaction";
+import { Transaction } from "@/types/transaction";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";

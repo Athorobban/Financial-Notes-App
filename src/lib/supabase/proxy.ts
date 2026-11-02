@@ -38,13 +38,13 @@ export const supabaseProxy = async (request: NextRequest) => {
     if (pathname.startsWith("/dashboard")) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      return NextResponse.redirect(url); // Wajib di-return agar proses berhenti di sini
+      return NextResponse.redirect(url);
     }
 
     if (pathname.startsWith("/admin/user")) {
       const url = request.nextUrl.clone();
       url.pathname = "/login-admin";
-      return NextResponse.redirect(url); // Wajib di-return
+      return NextResponse.redirect(url);
     }
   }
 
@@ -55,7 +55,7 @@ export const supabaseProxy = async (request: NextRequest) => {
     // Ambil data role spesifik dari tabel profiles
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
 
-    const role = profile?.role; // Nilainya antara 'Admin' atau 'User' sesuai DB Anda
+    const role = profile?.role;
 
     // Jika User biasa mencoba menyusup ke halaman Admin
     if (pathname.startsWith("/admin/user") && role !== "Admin") {
